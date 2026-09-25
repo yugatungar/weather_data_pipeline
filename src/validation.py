@@ -9,7 +9,7 @@ def validate_weather_data(df):
         "rain_mm"
     ]
 
-    # Check required columns
+    # 1. Check required columns
     missing_columns = [
         column
         for column in expected_columns
@@ -21,54 +21,104 @@ def validate_weather_data(df):
             f"Missing columns: {', '.join(missing_columns)}"
         )
 
-    # Check for null values
+    # 2. Check record count
+    if len(df) != 24:
+        raise ValueError(
+            f"Expected 24 hourly records, got {len(df)}."
+        )
+
+    # 3. Check null values
     if df[expected_columns].isna().any().any():
-        raise ValueError(
-            "Null values found in weather data."
+
+        null_columns = (
+            df[expected_columns]
+            .columns[
+                df[expected_columns]
+                .isna()
+                .any()
+            ]
+            .tolist()
         )
 
-    # Check hour
+        raise ValueError(
+            f"Null values found in columns: "
+            f"{', '.join(null_columns)}"
+        )
+
+    # 4. Check hour
     if ((df["hour"] < 0) | (df["hour"] > 23)).any():
+
         raise ValueError(
-            "Invalid hour found. Hour must be between 0 and 23."
+            "Invalid hour found. "
+            "Hour must be between 0 and 23."
         )
 
-    # Check humidity
+    # 5. Check humidity
     if (
         (df["relative_humidity_2m_pct"] < 0) |
         (df["relative_humidity_2m_pct"] > 100)
     ).any():
+
         raise ValueError(
-            "Invalid humidity value found."
+            "Invalid humidity value found. "
+            "Humidity must be between 0 and 100."
         )
 
-    # Check rain
+    # 6. Check rain
     if (df["rain_mm"] < 0).any():
+
         raise ValueError(
-            "Invalid rain value found."
+            "Invalid rain value found. "
+            "Rain cannot be negative."
         )
 
-    # Check wind speed
+    # 7. Check wind speed
     if (df["wind_speed_10m_kmh"] < 0).any():
+
         raise ValueError(
-            "Invalid wind speed value found."
+            "Invalid wind speed value found. "
+            "Wind speed cannot be negative."
         )
 
-    # Check temperature
+    # 8. Check temperature
     if (
         (df["temperature_2m_c"] < -50) |
         (df["temperature_2m_c"] > 60)
     ).any():
+
         raise ValueError(
-            "Invalid temperature value found."
+            "Invalid temperature value found. "
+            "Temperature must be between -50°C and 60°C."
         )
 
-    # Check duplicate primary-key combination
+    # 9. Check that data contains only one date
+    if df["date"].nunique() != 1:
+
+        raise ValueError(
+            "Weather data contains multiple dates."
+        )
+
+    # 10. Check duplicate date-hour combinations
     if df.duplicated(
         subset=["date", "hour"]
     ).any():
+
         raise ValueError(
             "Duplicate date-hour combination found."
+        )
+
+    # 11. Check all 24 hours exist
+    expected_hours = set(range(24))
+    actual_hours = set(df["hour"])
+
+    if actual_hours != expected_hours:
+
+        missing_hours = sorted(
+            expected_hours - actual_hours
+        )
+
+        raise ValueError(
+            f"Missing hourly records: {missing_hours}"
         )
 
     print("Data validation passed.")

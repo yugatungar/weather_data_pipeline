@@ -10,13 +10,16 @@ from sqlalchemy import (
 )
 
 
-engine = create_engine("sqlite:///weather.db")
+# SQLite database file
+engine = create_engine(
+    "sqlite:///weather.db"
+)
 
 metadata = MetaData()
 
 
-Pune_weather = Table(
-    "Pune_weather",
+pune_weather = Table(
+    "pune_weather",
     metadata,
 
     Column(
@@ -57,10 +60,14 @@ def create_table():
 
     metadata.create_all(engine)
 
+    print("Database table is ready.")
+
 
 def load_weather_data(df):
 
-    records = df.to_dict(orient="records")
+    records = df.to_dict(
+        orient="records"
+    )
 
     try:
 
@@ -70,7 +77,7 @@ def load_weather_data(df):
 
                 conn.execute(
                     text("""
-                        INSERT OR IGNORE INTO Pune_weather
+                        INSERT OR IGNORE INTO pune_weather
                         (
                             date,
                             hour,
@@ -92,7 +99,9 @@ def load_weather_data(df):
                     record
                 )
 
-        print("Weather data loaded successfully.")
+        print(
+            f"Loaded {len(records)} records into database."
+        )
 
     except Exception as e:
 
